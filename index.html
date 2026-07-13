@@ -32,16 +32,22 @@
     <header>
         <nav>
             <ul>
-                <li><a href="#about">Sobre</a></li>
-                <li><a href="#skills">Habilidades</a></li>
-                <li><a href="#experience">Experiência</a></li>
-                <li><a href="#architecture">Arquitetura</a></li>
-                <li><a href="#contact">Contato</a></li>
+                <li><a href="#about" id="nav-about">Sobre</a></li>
+                <li><a href="#skills" id="nav-skills">Habilidades</a></li>
+                <li><a href="#experience" id="nav-experience">Experiência</a></li>
+                <li><a href="#architecture" id="nav-architecture">Arquitetura</a></li>
+                <li><a href="#contact" id="nav-contact">Contato</a></li>
+                <li>
+                    <div class="lang-toggle">
+                        <button class="active" onclick="setLanguage('pt')" id="lang-pt">PT</button>
+                        <button onclick="setLanguage('en')" id="lang-en">EN</button>
+                    </div>
+                </li>
             </ul>
         </nav>
     </header>
 
-    <main>
+    <main id="main-content">
         <section id="about">
             <h1>Desenvolvedor Full Stack</h1>
             <p>Especialista em desenvolvimento de aplicações, arquitetura de sistemas e tecnologias de nuvem.</p>
@@ -131,56 +137,236 @@
 
     <footer>
         <div class="footer-content">
-            <p>© 2019–<span id="year"></span> Marcus S. Costa. Nenhuma licença (todos os direitos reservados).</p>
-            <script>
-                document.getElementById("year").textContent = new Date().getFullYear();
-            </script>
+            <p id="footer-text">© 2019–2026 Marcus S. Costa. Nenhuma licença (todos os direitos reservados).</p>
         </div>
     </footer>
 
     <script>
-        const diagramDef = `graph LR
-            LB["NGINX / HAProxy"]
-            GW["Kong / Spring Gateway"]
-            IAM["Keycloak / Azure AD"]
-            ERP["Java / .NET"]
-            CRM["Node.js / Python"]
-            BI["Power BI / Python"]
-            DB[("Oracle / SQL Server")]
-            RC[("Redis")]
-            DW[("Snowflake / Hadoop")]
-            MQ["Kafka / RabbitMQ"]
-            WK[".NET / Java"]
-            MN["Prometheus / Grafana"]
+        const diagramDefs = {
+            pt: `graph LR
+                LB["NGINX / HAProxy"]
+                GW["Kong / Spring Gateway"]
+                IAM["Keycloak / Azure AD"]
+                ERP["Java / .NET"]
+                CRM["Node.js / Python"]
+                BI["Power BI / Python"]
+                DB[("Oracle / SQL Server")]
+                RC[("Redis")]
+                DW[("Snowflake / Hadoop")]
+                MQ["Kafka / RabbitMQ"]
+                WK[".NET / Java"]
+                MN["Prometheus / Grafana"]
 
-            LB --> GW
-            GW --> IAM
-            GW --> ERP
-            GW --> CRM
-            GW --> BI
-            ERP --> DB
-            CRM --> RC
-            BI --> DW
-            ERP --> MQ
-            CRM --> MQ
-            MQ --> WK
-            GW --> MN`;
+                LB --> GW
+                GW --> IAM
+                GW --> ERP
+                GW --> CRM
+                GW --> BI
+                ERP --> DB
+                CRM --> RC
+                BI --> DW
+                ERP --> MQ
+                CRM --> MQ
+                MQ --> WK
+                GW --> MN`,
+            en: `graph LR
+                LB["NGINX / HAProxy"]
+                GW["Kong / Spring Gateway"]
+                IAM["Keycloak / Azure AD"]
+                ERP["Java / .NET"]
+                CRM["Node.js / Python"]
+                BI["Power BI / Python"]
+                DB[("Oracle / SQL Server")]
+                RC[("Redis")]
+                DW[("Snowflake / Hadoop")]
+                MQ["Kafka / RabbitMQ"]
+                WK[".NET / Java"]
+                MN["Prometheus / Grafana"]
 
-        async function renderMermaid() {
-            const container = document.getElementById('mermaid-container');
-            if (!container) return;
-            try {
-                const { svg } = await mermaid.render('arch-diagram', diagramDef);
-                container.innerHTML = svg;
-            } catch (e) {
-                container.innerHTML = '<p style="color:#a0aec0;text-align:center;">Erro ao carregar diagrama.</p>';
-                console.error(e);
+                LB --> GW
+                GW --> IAM
+                GW --> ERP
+                GW --> CRM
+                GW --> BI
+                ERP --> DB
+                CRM --> RC
+                BI --> DW
+                ERP --> MQ
+                CRM --> MQ
+                MQ --> WK
+                GW --> MN`
+        };
+
+        const content = {
+            pt: {
+                heroTitle: "Desenvolvedor Full Stack",
+                heroDesc: "Especialista em desenvolvimento de aplicações, arquitetura de sistemas e tecnologias de nuvem.",
+                ctaText: "Explore minhas habilidades",
+                skillsTitle: "Habilidades",
+                skills: [
+                    { icon: "code", title: '<a href="desenvolvimento-aplicacoes.html">Desenvolvimento de Aplicações</a>', desc: "Experiência em várias linguagens e frameworks" },
+                    { icon: "database", title: "Gerenciamento de Bancos de Dados", desc: "Proficiente em SQL e NoSQL" },
+                    { icon: "cloud", title: "Tecnologias de Nuvem", desc: "AWS, Azure, Google Cloud" },
+                    { icon: "terminal", title: "DevOps", desc: "CI/CD, Docker, Kubernetes" },
+                    { icon: "cpu", title: "Machine Learning", desc: "Conhecimentos básicos em ML e IA" },
+                    { icon: "shield", title: "Segurança", desc: "Práticas de segurança em aplicações e infraestrutura" }
+                ],
+                expTitle: "Experiência",
+                expDesc: "Experiência em criar arquiteturas e ambientes utilizando tecnologias open source, tanto em ambientes físicos quanto em máquinas virtuais na nuvem. Especializado em lidar com escalabilidade e segurança, desde micro serviços até grandes monólitos.",
+                expItems: [
+                    "Desenvolvimento de aplicações de larga escala",
+                    "Implementação de arquiteturas de microserviços",
+                    "Otimização de performance e escalabilidade",
+                    "Integração de sistemas e APIs",
+                    "Implementação de práticas de DevOps e CI/CD"
+                ],
+                archTitle: "Arquitetura de Microsserviços Corporativa",
+                contactTitle: "Contato",
+                contactDesc: "Como entrar em contato comigo...",
+                footer: "&copy; 2019&ndash;2026 Marcus S. Costa. Nenhuma licença (todos os direitos reservados).",
+                nav: ["Sobre", "Habilidades", "Experiência", "Arquitetura", "Contato"]
+            },
+            en: {
+                heroTitle: "Full Stack Developer",
+                heroDesc: "Specialist in application development, system architecture and cloud technologies.",
+                ctaText: "Explore my skills",
+                skillsTitle: "Skills",
+                skills: [
+                    { icon: "code", title: '<a href="desenvolvimento-aplicacoes.html">Application Development</a>', desc: "Experience in multiple languages and frameworks" },
+                    { icon: "database", title: "Database Management", desc: "Proficient in SQL and NoSQL" },
+                    { icon: "cloud", title: "Cloud Technologies", desc: "AWS, Azure, Google Cloud" },
+                    { icon: "terminal", title: "DevOps", desc: "CI/CD, Docker, Kubernetes" },
+                    { icon: "cpu", title: "Machine Learning", desc: "Basic knowledge in ML and AI" },
+                    { icon: "shield", title: "Security", desc: "Security practices in applications and infrastructure" }
+                ],
+                expTitle: "Experience",
+                expDesc: "Experience in creating architectures and environments using open source technologies, both in physical environments and cloud virtual machines. Specialized in dealing with scalability and security, from microservices to large monoliths.",
+                expItems: [
+                    "Large-scale application development",
+                    "Microservices architecture implementation",
+                    "Performance and scalability optimization",
+                    "System and API integration",
+                    "DevOps and CI/CD practices implementation"
+                ],
+                archTitle: "Corporate Microservices Architecture",
+                contactTitle: "Contact",
+                contactDesc: "How to get in touch with me...",
+                footer: "&copy; 2019&ndash;2026 Marcus S. Costa. No license (all rights reserved).",
+                nav: ["About", "Skills", "Experience", "Architecture", "Contact"]
             }
+        };
+
+        let svgCache = {};
+        const navIds = ["nav-about", "nav-skills", "nav-experience", "nav-architecture", "nav-contact"];
+        const sectionIds = ["about", "skills", "experience", "architecture", "contact"];
+
+        function buildPageHTML(lang) {
+            const c = content[lang];
+            const skillCards = c.skills.map(s =>
+                `<div class="skill-card"><i data-lucide="${s.icon}"></i><h3>${s.title}</h3><p>${s.desc}</p></div>`
+            ).join('');
+            const expItems = c.expItems.map(item => `<li>${item}</li>`).join('');
+            return `<section id="about">
+                <h1>${c.heroTitle}</h1>
+                <p>${c.heroDesc}</p>
+                <a href="#skills" class="cta-button">
+                    ${c.ctaText}
+                    <i data-lucide="chevron-down"></i>
+                </a>
+            </section>
+            <section id="skills">
+                <h2>${c.skillsTitle}</h2>
+                <div class="skills-grid">${skillCards}</div>
+            </section>
+            <section id="experience">
+                <h2>${c.expTitle}</h2>
+                <div class="experience-content">
+                    <p>${c.expDesc}</p>
+                    <ul>${expItems}</ul>
+                </div>
+            </section>
+            <section id="architecture">
+                <h2>${c.archTitle}</h2>
+                <div id="mermaid-container"></div>
+            </section>
+            <section id="contact">
+                <h2>${c.contactTitle}</h2>
+                <div class="contact-content">
+                    <div class="contact-info">
+                        <p>${c.contactDesc}</p>
+                        <div class="social-links">
+                            <a href="https://github.com/marcusscos" target="_blank" rel="noopener noreferrer"><i class="fab fa-github fa-2x"></i></a>
+                            <a href="https://www.linkedin.com/in/marcus-segalotto-costa-986060156/" target="_blank" rel="noopener noreferrer"><i class="fab fa-linkedin fa-2x"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </section>`;
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            renderMermaid();
+        async function renderMermaidSVG(def) {
+            const { svg } = await mermaid.render('arch-diagram-' + Date.now(), def);
+            return svg;
+        }
+
+        async function setLanguage(lang) {
+            document.getElementById('lang-pt').classList.toggle('active', lang === 'pt');
+            document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+            document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en-US';
+            document.title = lang === 'pt' ? 'Desenvolvedor Full Stack - Portfólio' : 'Full Stack Developer - Portfolio';
+
+            // Update nav links
+            document.querySelectorAll('nav ul li a').forEach((a, i) => {
+                const hrefs = ['#about', '#skills', '#experience', '#architecture', '#contact'];
+                if (i < content[lang].nav.length) {
+                    a.textContent = content[lang].nav[i];
+                    a.href = hrefs[i];
+                }
+            });
+
+            // Rebuild main content
+            document.getElementById('main-content').innerHTML = buildPageHTML(lang);
+            if (window.lucide) lucide.createIcons();
+
+            // Render mermaid
+            const c = document.getElementById('mermaid-container');
+            if (c) {
+                if (svgCache[lang]) {
+                    c.innerHTML = svgCache[lang];
+                } else {
+                    c.innerHTML = '<p style="color:#a0aec0;text-align:center;">Carregando...</p>';
+                    try {
+                        const s = await renderMermaidSVG(diagramDefs[lang]);
+                        svgCache[lang] = s;
+                        c.innerHTML = s;
+                    } catch (e) {
+                        c.innerHTML = '<p style="color:#a0aec0;text-align:center;">Erro ao carregar diagrama.</p>';
+                        console.error(e);
+                    }
+                }
+            }
+
+            document.getElementById('footer-text').innerHTML = content[lang].footer;
+            localStorage.setItem('preferred-lang', lang);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const l = localStorage.getItem('preferred-lang') || 'pt';
+            document.getElementById('lang-pt').classList.add('active');
+            document.getElementById('main-content').innerHTML = buildPageHTML(l);
+            if (window.lucide) lucide.createIcons();
+            const c = document.getElementById('mermaid-container');
+            if (c) {
+                c.innerHTML = '<p style="color:#a0aec0;text-align:center;">Carregando...</p>';
+                try {
+                    const s = await renderMermaidSVG(diagramDefs[l]);
+                    svgCache[l] = s;
+                    c.innerHTML = s;
+                } catch (e) {
+                    c.innerHTML = '<p style="color:#a0aec0;text-align:center;">Erro ao carregar diagrama.</p>';
+                    console.error(e);
+                }
+            }
+            document.getElementById('footer-text').innerHTML = content[l].footer;
         });
     </script>
 </body>
