@@ -474,11 +474,12 @@ footer p {
     }
 
     nav ul {
-        padding: 0.4rem;
+        padding: 0.4rem 0.8rem;
         gap: 4px;
         flex-wrap: nowrap;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        justify-content: flex-start;
     }
 
     nav ul li {

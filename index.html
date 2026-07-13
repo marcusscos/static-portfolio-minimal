@@ -491,9 +491,10 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', async () => {
             const l = localStorage.getItem('preferred-lang') || 'pt';
-            document.getElementById('lang-pt').classList.add('active');
+            document.getElementById('lang-pt').classList.toggle('active', l === 'pt');
+            document.getElementById('lang-en').classList.toggle('active', l === 'en');
             document.getElementById('main-content').innerHTML = buildPageHTML(l);
             if (window.lucide) lucide.createIcons();
 

@@ -135,19 +135,23 @@
         DIMMED_NODE_EMISSIVE: 0.05,
         DIMMED_OPACITY: 0.2,
         HOVER_EMISSIVE: 0.9,
-        DEFAULT_EMISSIVE: 0.25,
-        LINE_OPACITY_VISIBLE: 0.35,
-        LINE_OPACITY_DEFAULT: 0.15,
+        DEFAULT_EMISSIVE: 0.3,
+        LINE_OPACITY_VISIBLE: 0.45,
+        LINE_OPACITY_DEFAULT: 0.25,
         ANIMATION_DURATION: 'opacity 0.4s ease'
     };
 
     const CORE_NODE_ID = 'core';
 
     const SCENE_CONFIG = {
-        camera: { fov: 55, near: 0.1, far: 1000, initialPos: [0, 6, 16] },
-        controls: { dampingFactor: 0.08, minDistance: 4, maxDistance: 35, autoRotateSpeed: 1.2 },
-        skills: { radius: 4.5, categoryRadiusOffset: 1.5, coreScale: 1.4, coreYOffset: -1.2, labelYOffset: 0.8 },
-        arch: { layerSpacing: 2.0, nodeSpacing: 3.2, cameraPos: [-8, 6, 12], target: [0, 0.5, 0] }
+        camera: { fov: 45, near: 0.1, far: 1000, initialPos: [0, 5, 16] },
+        controls: { dampingFactor: 0.08, minDistance: 4, maxDistance: 35, autoRotateSpeed: 0.7 },
+        // Each group orbits at its own radius (concentric rings)
+        // orbitBaseRadius: innermost orbit distance
+        // orbitStep: additional distance per orbit level
+        // categoryRadiusOffset: how far out the category label sits from its orbit
+        skills: { orbitBaseRadius: 3.0, orbitStep: 1.4, categoryRadiusOffset: 0.9, coreScale: 1.4, coreYOffset: -1.5, labelYOffset: 0.7, nodeArcHeight: 0.1, nodeSpacing: 1.1 },
+        arch: { layerSpacing: 2.5, nodeSpacing: 4.5, labelOffset: 1.2, cameraPos: [-10, 8, 14], target: [0, 0.5, 0] }
     };
 
     // ============================================================
@@ -277,7 +281,9 @@
 
     function attachEventListeners() {
         renderer.domElement.addEventListener('click', onCanvasClick);
+        renderer.domElement.addEventListener('touchend', onCanvasTouchEnd, { passive: false });
         renderer.domElement.addEventListener('mousemove', onCanvasMove);
+        renderer.domElement.addEventListener('touchstart', onCanvasTouchStart, { passive: false });
         window.addEventListener('resize', handleResize);
     }
 
@@ -329,18 +335,52 @@
         resetSkillsTracking();
 
         const groups = Object.entries(TECH_NODE_GROUPS);
-        const groupCount = groups.length;
         const cfg = SCENE_CONFIG.skills;
 
-        groups.forEach(([key, group], groupIndex) => {
-            const angleStart = (groupIndex / groupCount) * Math.PI * 2;
-            const angleEnd = ((groupIndex + 1) / groupCount) * Math.PI * 2;
-            const angleMid = (angleStart + angleEnd) / 2;
-            const nodeCount = group.nodes.length;
-            const nodeRadius = cfg.radius + (nodeCount > 4 ? 0.3 : 0);
+        // Define logical software engineering layers from core to periphery
+        // Each layer sits on its own concentric orbit
+        const LAYER_ORDER = [
+            // Innermost (closest to core): fundamental languages
+            'languages',
+            // Presentation layer
+            'frontend',
+            // Business logic layer
+            'backend',
+            // Data layer
+            'database',
+            // Integration layer (messaging between services)
+            'messaging',
+            // Infrastructure & deployment layer
+            'cloud',
+            // Outermost: monitoring and observability (cross-cutting)
+            'observability'
+        ];
 
-            createCategoryLabel(key, group, angleMid, cfg);
-            createGroupNodes(key, group, angleStart, angleEnd, nodeRadius);
+        // Build ordered group list following software engineering layers
+        const layerGroups = LAYER_ORDER
+            .map(key => {
+                const entry = groups.find(([k]) => k === key);
+                return entry ? { key: entry[0], group: entry[1] } : null;
+            })
+            .filter(Boolean);
+
+        // Each layer gets its own orbital ring, evenly spaced around the circle
+        layerGroups.forEach(({ key, group }, index) => {
+            const orbitRadius = cfg.orbitBaseRadius + index * cfg.orbitStep;
+
+            // Distribute each layer evenly around 360°, offset by layer index
+            // so different layers don't overlap in angle
+            const layerAngleOffset = (index / layerGroups.length) * Math.PI * 2;
+            const nodeArc = (group.nodes.length / 10) * Math.PI; // proportional arc
+            const halfArc = nodeArc / 2;
+
+            // Center the group arc at the layer's angle position
+            const angleMid = layerAngleOffset;
+            const angleStart = angleMid - halfArc;
+            const angleEnd = angleMid + halfArc;
+
+            createCategoryLabel(key, group, angleMid, orbitRadius, cfg);
+            createGroupNodes(key, group, angleStart, angleEnd, orbitRadius, cfg);
             createIntraGroupLines(key, group);
         });
 
@@ -358,8 +398,8 @@
         coreLabel = null;
     }
 
-    function createCategoryLabel(groupKey, group, angleMid, cfg) {
-        const catRadius = cfg.radius + cfg.categoryRadiusOffset;
+    function createCategoryLabel(groupKey, group, angleMid, orbitRadius, cfg) {
+        const catRadius = orbitRadius + cfg.categoryRadiusOffset;
         const catLabel = makeLabel(group.label.pt, group.color, true);
         catLabel.position.set(
             Math.cos(angleMid) * catRadius,
@@ -370,20 +410,24 @@
         categoryLabels.push({ labelObj: catLabel, groupKey: groupKey });
     }
 
-    function createGroupNodes(groupKey, group, angleStart, angleEnd, nodeRadius) {
+    function createGroupNodes(groupKey, group, angleStart, angleEnd, orbitRadius, cfg) {
         const nodeCount = group.nodes.length;
         const centerY = 0;
+        const { nodeArcHeight, nodeSpacing } = cfg;
 
+        // For groups with many nodes in a small arc, spread them out along the orbit
+        // by evenly distributing them across the arc
         group.nodes.forEach((node, nodeIndex) => {
             const t = nodeCount > 1 ? nodeIndex / (nodeCount - 1) : 0.5;
             const angle = angleStart + (angleEnd - angleStart) * t;
-            const x = Math.cos(angle) * nodeRadius;
-            const z = Math.sin(angle) * nodeRadius;
-            const yOffset = Math.sin(t * Math.PI) * 0.6;
+            const x = Math.cos(angle) * orbitRadius;
+            const z = Math.sin(angle) * orbitRadius;
+            const yOffset = Math.sin(t * Math.PI) * nodeArcHeight;
 
             const sphere = makeNode(node.id, node.label, group.color);
             sphere.position.set(x, centerY + yOffset, z);
             sphere.userData.groupKey = groupKey;
+            sphere.userData._baseY = centerY + yOffset;
             scene.add(sphere);
             nodeObjects[node.id] = sphere;
             nodeGroupMap[node.id] = groupKey;
@@ -403,7 +447,7 @@
             const n1 = nodeObjects[group.nodes[i].id];
             const n2 = nodeObjects[group.nodes[i + 1].id];
             if (n1 && n2) {
-                const line = makeLine(n1.position, n2.position, group.color, 0.12);
+                const line = makeLine(n1.position, n2.position, group.color, false);
                 scene.add(line);
                 groupLines.push(line);
             }
@@ -449,11 +493,12 @@
 
                 const sphere = makeNode(node.id, node.label, node.color);
                 sphere.position.set(x, y, 0);
+                sphere.userData._baseY = y;
                 scene.add(sphere);
                 nodeObjects[node.id] = sphere;
 
                 const label = makeLabel(node.label, node.color, false);
-                label.position.set(x, y - 0.9, 0);
+                label.position.set(x, y - cfg.labelOffset, 0);
                 scene.add(label);
             });
         });
@@ -462,7 +507,7 @@
             const from = nodeObjects[edge.from];
             const to = nodeObjects[edge.to];
             if (from && to) {
-                const line = makeLine(from.position, to.position, 0x63b3ed, 1.0);
+                const line = makeLine(from.position, to.position, 0x63b3ed, true);
                 scene.add(line);
                 makeFlowParticles(from.position, to.position);
             }
@@ -487,16 +532,31 @@
     // ============================================================
 
     function makeNode(id, label, color) {
-        const geo = new THREE.SphereGeometry(0.45, 20, 20);
+        const geo = new THREE.SphereGeometry(0.55, 24, 24);
         const mat = new THREE.MeshPhongMaterial({
             color: color,
             emissive: color,
             emissiveIntensity: VISIBILITY.DEFAULT_EMISSIVE,
-            shininess: 70,
-            specular: new THREE.Color(0x333366)
+            shininess: 90,
+            specular: new THREE.Color(0x555577)
         });
         const mesh = new THREE.Mesh(geo, mat);
         mesh.userData = { id: id, label: label, type: 'node', color: color };
+
+        // Add a subtle glow ring around the node
+        const ringGeo = new THREE.RingGeometry(0.62, 0.75, 32);
+        const ringMat = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: 0.15,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = -0.1;
+        mesh.add(ring);
+
         return mesh;
     }
 
@@ -510,31 +570,34 @@
         div.textContent = text;
         div.style.color = '#e2e8f0';
         div.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        div.style.fontSize = isCategory ? '13px' : '11px';
-        div.style.fontWeight = isCategory ? '700' : '500';
-        div.style.letterSpacing = isCategory ? '0.03em' : '0';
-        div.style.textShadow = '0 0 12px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7)';
+        div.style.fontSize = isCategory ? '14px' : '12px';
+        div.style.fontWeight = isCategory ? '700' : '600';
+        div.style.letterSpacing = isCategory ? '0.03em' : '0.01em';
+        div.style.textShadow = '0 0 14px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.9)';
         div.style.background = isCategory
-            ? `rgba(${r}, ${g}, ${b}, 0.15)`
-            : 'rgba(0,0,0,0.3)';
-        div.style.padding = isCategory ? '4px 14px' : '2px 8px';
-        div.style.borderRadius = isCategory ? '12px' : '4px';
+            ? `rgba(${r}, ${g}, ${b}, 0.25)`
+            : 'rgba(0,0,0,0.55)';
+        div.style.padding = isCategory ? '5px 16px' : '3px 10px';
+        div.style.borderRadius = isCategory ? '14px' : '6px';
         div.style.border = isCategory
-            ? `1px solid rgba(${r}, ${g}, ${b}, 0.25)`
-            : 'none';
-        div.style.backdropFilter = 'blur(4px)';
+            ? `1px solid rgba(${r}, ${g}, ${b}, 0.4)`
+            : '1px solid rgba(255,255,255,0.08)';
+        div.style.backdropFilter = 'blur(6px)';
+        div.style.boxShadow = isCategory
+            ? `0 0 20px rgba(${r}, ${g}, ${b}, 0.15)`
+            : '0 2px 8px rgba(0,0,0,0.4)';
         div.style.whiteSpace = 'nowrap';
         div.style.pointerEvents = 'none';
         return new THREE.CSS2DObject(div);
     }
 
-    function makeLine(from, to, color, width) {
+    function makeLine(from, to, color, isArchEdge) {
         const points = [from.clone(), to.clone()];
         const geo = new THREE.BufferGeometry().setFromPoints(points);
         const mat = new THREE.LineBasicMaterial({
             color: color,
             transparent: true,
-            opacity: width > 0.5 ? 0.35 : 0.15,
+            opacity: isArchEdge ? VISIBILITY.LINE_OPACITY_VISIBLE : VISIBILITY.LINE_OPACITY_DEFAULT,
             blending: THREE.AdditiveBlending
         });
         return new THREE.Line(geo, mat);
@@ -633,6 +696,13 @@
         mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     }
 
+    function getTouchPosition(event) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        const touch = event.changedTouches[0];
+        mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+
     function getHitNode(event) {
         getMousePosition(event);
         raycaster.setFromCamera(mouse, camera);
@@ -646,11 +716,101 @@
         return null;
     }
 
+    function getHitNodeAtPosition() {
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObjects(scene.children);
+
+        for (const hit of hits) {
+            if (hit.object.userData && hit.object.userData.type === 'node') {
+                return hit.object;
+            }
+        }
+        return null;
+    }
+
+    let touchStartPos = null;
+    let touchHandled = false;
+
+    // ============================================================
+    // INTERACTION - Touch (Mobile)
+    // ============================================================
+
+    function onCanvasTouchStart(event) {
+        const touch = event.changedTouches[0];
+        touchStartPos = { x: touch.clientX, y: touch.clientY };
+        touchHandled = false;
+    }
+
+    function onCanvasTouchEnd(event) {
+        // Only trigger click if it was a tap (not a drag/scroll)
+        if (!touchStartPos) return;
+        const touch = event.changedTouches[0];
+        const dx = touch.clientX - touchStartPos.x;
+        const dy = touch.clientY - touchStartPos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // If user dragged more than 10px, it was a scroll/pan — ignore
+        if (dist > 10) {
+            touchStartPos = null;
+            return;
+        }
+        touchStartPos = null;
+
+        // Prevent default to avoid double-firing with click
+        event.preventDefault();
+
+        // Mark as handled so onCanvasClick ignores this interaction
+        touchHandled = true;
+
+        // Reuse click logic with touch coordinates
+        const rect = renderer.domElement.getBoundingClientRect();
+        const t = event.changedTouches[0];
+        mouse.x = ((t.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((t.clientY - rect.top) / rect.height) * 2 + 1;
+
+        const hitNode = getHitNodeAtPosition();
+
+        if (hitNode) {
+            const userData = hitNode.userData;
+
+            if (userData.id === CORE_NODE_ID) {
+                resetFocusSkills();
+                showNodeInfo(userData);
+                return;
+            }
+
+            if (currentMode === 'skills') {
+                const groupKey = userData.groupKey;
+                if (groupKey) {
+                    if (focusGroup === groupKey) {
+                        resetFocusSkills();
+                    } else {
+                        focusGroupSkills(groupKey);
+                    }
+                    showNodeInfo(userData);
+                    return;
+                }
+            }
+
+            showNodeInfo(userData);
+            return;
+        }
+
+        if (currentMode === 'skills' && focusGroup !== null) {
+            resetFocusSkills();
+        }
+    }
+
     // ============================================================
     // INTERACTION - Click
     // ============================================================
 
     function onCanvasClick(event) {
+        // If touch already handled this interaction, ignore the click event
+        if (touchHandled) {
+            touchHandled = false;
+            return;
+        }
         const hitNode = getHitNode(event);
 
         if (hitNode) {
@@ -885,7 +1045,11 @@
                 if (node.userData._floatOffset === undefined) {
                     node.userData._floatOffset = Math.random() * Math.PI * 2;
                 }
-                node.position.y += Math.sin(time * 0.4 + node.userData._floatOffset + index * 0.3) * 0.0008;
+                if (node.userData._baseY === undefined) {
+                    node.userData._baseY = node.position.y;
+                }
+                const floatY = Math.sin(time * 0.4 + node.userData._floatOffset + index * 0.3) * 0.08;
+                node.position.y = node.userData._baseY + floatY;
             }
             index++;
         }
@@ -941,7 +1105,9 @@
 
         if (renderer) {
             renderer.domElement.removeEventListener('click', onCanvasClick);
+            renderer.domElement.removeEventListener('touchend', onCanvasTouchEnd);
             renderer.domElement.removeEventListener('mousemove', onCanvasMove);
+            renderer.domElement.removeEventListener('touchstart', onCanvasTouchStart);
             renderer.dispose();
             renderer = null;
         }
