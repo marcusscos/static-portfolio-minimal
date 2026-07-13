@@ -9,6 +9,23 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1055/1055687.png" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: { background: '#1a202c', primaryColor: '#2d3748', primaryTextColor: '#ffffff', primaryBorderColor: '#63b3ed', lineColor: '#63b3ed', nodeBorder: '#63b3ed', nodeTextColor: '#ffffff' }, flowchart: { htmlLabels: false, padding: 20, nodeSpacing: 60, rankSpacing: 80 } });
+    </script>
+    <style>
+        .lang-toggle { display: flex; gap: 4px; background: #1e1e1e; border-radius: 6px; padding: 3px; margin-left: auto; }
+        .lang-toggle button { background: transparent; border: none; color: #888; cursor: pointer; padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; }
+        .lang-toggle button.active { background: #007acc; color: #fff; }
+        .lang-toggle button:hover:not(.active) { color: #ccc; }
+        #mermaid-container { background: #1a202c; border-radius: 8px; padding: 24px; overflow-x: auto; min-height: 500px; margin-top: 2rem; }
+        #mermaid-container svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+        #mermaid-container svg text { fill: #ffffff !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; font-size: 13px !important; font-weight: 600 !important; }
+        #mermaid-container svg .node rect { fill: #2d3748 !important; stroke: #63b3ed !important; stroke-width: 2px !important; rx: 6px !important; }
+        #mermaid-container svg .node polygon { fill: #2d3748 !important; stroke: #63b3ed !important; stroke-width: 2px !important; }
+        #mermaid-container svg .edgePath path { stroke: #63b3ed !important; stroke-width: 2px !important; fill: none !important; }
+        #mermaid-container svg .marker { fill: #63b3ed !important; stroke: #63b3ed !important; }
+    </style>
 </head>
 
 <body>
@@ -18,6 +35,7 @@
                 <li><a href="#about">Sobre</a></li>
                 <li><a href="#skills">Habilidades</a></li>
                 <li><a href="#experience">Experiência</a></li>
+                <li><a href="#architecture">Arquitetura</a></li>
                 <li><a href="#contact">Contato</a></li>
             </ul>
         </nav>
@@ -87,6 +105,11 @@
             </div>
         </section>
 
+        <section id="architecture">
+            <h2>Arquitetura de Microsserviços Corporativa</h2>
+            <div id="mermaid-container"></div>
+        </section>
+
         <section id="contact">
             <h2>Contato</h2>
             <div class="contact-content">
@@ -116,7 +139,49 @@
     </footer>
 
     <script>
-        lucide.createIcons();
+        const diagramDef = `graph LR
+            LB["NGINX / HAProxy"]
+            GW["Kong / Spring Gateway"]
+            IAM["Keycloak / Azure AD"]
+            ERP["Java / .NET"]
+            CRM["Node.js / Python"]
+            BI["Power BI / Python"]
+            DB[("Oracle / SQL Server")]
+            RC[("Redis")]
+            DW[("Snowflake / Hadoop")]
+            MQ["Kafka / RabbitMQ"]
+            WK[".NET / Java"]
+            MN["Prometheus / Grafana"]
+
+            LB --> GW
+            GW --> IAM
+            GW --> ERP
+            GW --> CRM
+            GW --> BI
+            ERP --> DB
+            CRM --> RC
+            BI --> DW
+            ERP --> MQ
+            CRM --> MQ
+            MQ --> WK
+            GW --> MN`;
+
+        async function renderMermaid() {
+            const container = document.getElementById('mermaid-container');
+            if (!container) return;
+            try {
+                const { svg } = await mermaid.render('arch-diagram', diagramDef);
+                container.innerHTML = svg;
+            } catch (e) {
+                container.innerHTML = '<p style="color:#a0aec0;text-align:center;">Erro ao carregar diagrama.</p>';
+                console.error(e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderMermaid();
+        });
     </script>
 </body>
 
