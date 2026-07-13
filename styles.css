@@ -340,6 +340,122 @@ footer p {
     font-size: 1rem;
 }
 
+/* Timeline Styles (Experiência) */
+.experience-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.timeline-item {
+    display: flex;
+    gap: 1.5rem;
+    background: var(--secondary-bg);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    border-left: 3px solid #63b3ed;
+}
+
+.timeline-period {
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #63b3ed;
+    min-width: 100px;
+    padding-top: 0.2rem;
+}
+
+.timeline-content h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.2rem;
+}
+
+.timeline-company {
+    font-size: 0.85rem;
+    color: #a0aec0;
+    margin-bottom: 0.5rem;
+}
+
+.timeline-content ul {
+    list-style-type: disc;
+    padding-left: 1.2rem;
+    color: var(--text-muted);
+}
+
+.timeline-content ul li {
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+/* Projects Grid */
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.project-card {
+    display: block;
+    background: var(--secondary-bg);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    color: var(--text-color);
+    border: 1px solid transparent;
+    transition: border-color 0.3s ease, transform 0.2s ease;
+}
+
+.project-card:hover {
+    border-color: #63b3ed;
+    transform: translateY(-2px);
+}
+
+.project-icon {
+    font-size: 2rem;
+    color: #63b3ed;
+    margin-bottom: 0.8rem;
+}
+
+.project-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.3rem;
+}
+
+.project-tech {
+    font-size: 0.8rem;
+    color: #63b3ed;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.project-card p {
+    font-size: 0.85rem;
+    text-align: left;
+}
+
+/* Contact Form */
+.contact-form {
+    margin-top: 1.5rem;
+}
+
+.form-status {
+    font-size: 0.85rem;
+    margin-top: 0.8rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.form-success {
+    color: #68d391;
+    background: rgba(104, 211, 145, 0.1);
+}
+
+.form-error {
+    color: #fc8181;
+    background: rgba(252, 129, 129, 0.1);
+}
+
 @keyframes techRadarFadeIn {
     from {
         opacity: 0;
@@ -462,6 +578,25 @@ footer p {
 
     .experience-content {
         padding: 1rem;
+    }
+
+    .experience-timeline {
+        gap: 1rem;
+    }
+
+    .timeline-item {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1rem;
+    }
+
+    .timeline-period {
+        min-width: auto;
+    }
+
+    .projects-grid {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
     }
 
     .contact-info {

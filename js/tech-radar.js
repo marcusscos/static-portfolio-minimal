@@ -124,6 +124,33 @@
     ];
 
     // ============================================================
+    // CONSTANTS
+    // ============================================================
+
+    const VISIBILITY = {
+        FOCUSED_LABEL_OPACITY: 1,
+        FOCUSED_NODE_EMISSIVE: 0.5,
+        DIMMED_LABEL_OPACITY: 0.12,
+        DIMMED_CATEGORY_OPACITY: 0.15,
+        DIMMED_NODE_EMISSIVE: 0.05,
+        DIMMED_OPACITY: 0.2,
+        HOVER_EMISSIVE: 0.9,
+        DEFAULT_EMISSIVE: 0.25,
+        LINE_OPACITY_VISIBLE: 0.35,
+        LINE_OPACITY_DEFAULT: 0.15,
+        ANIMATION_DURATION: 'opacity 0.4s ease'
+    };
+
+    const CORE_NODE_ID = 'core';
+
+    const SCENE_CONFIG = {
+        camera: { fov: 55, near: 0.1, far: 1000, initialPos: [0, 6, 16] },
+        controls: { dampingFactor: 0.08, minDistance: 4, maxDistance: 35, autoRotateSpeed: 1.2 },
+        skills: { radius: 4.5, categoryRadiusOffset: 1.5, coreScale: 1.4, coreYOffset: -1.2, labelYOffset: 0.8 },
+        arch: { layerSpacing: 2.0, nodeSpacing: 3.2, cameraPos: [-8, 6, 12], target: [0, 0.5, 0] }
+    };
+
+    // ============================================================
     // STATE
     // ============================================================
 
@@ -140,12 +167,12 @@
     let container;
 
     // Group tracking for Skills mode focus
-    let allLabels = [];           // { labelObj, groupKey }
-    let allLines = [];            // { lineObj, groupKey }
-    let allNodeMeshes = [];       // { mesh, groupKey }
-    let nodeGroupMap = {};        // nodeId -> groupKey
-    let focusGroup = null;        // currently focused group key, null = all visible
-    let categoryLabels = [];      // { labelObj, groupKey }
+    let allLabels = [];
+    let allLines = [];
+    let allNodeMeshes = [];
+    let nodeGroupMap = {};
+    let focusGroup = null;
+    let categoryLabels = [];
     let coreNode = null;
     let coreLabel = null;
 
@@ -154,7 +181,6 @@
     // ============================================================
 
     function initTechRadar() {
-        // Destroy previous instance if re-initializing (e.g. language switch)
         if (isInitialized) {
             destroyTechRadar();
         }
@@ -169,15 +195,41 @@
         isInitialized = true;
         clock = new THREE.Clock();
 
-        // Scene
+        setupScene();
+        setupCamera();
+        setupRenderers();
+        setupControls();
+        setupRaycaster();
+        setupLights();
+        createStarField();
+
+        renderSkillsMode();
+
+        attachEventListeners();
+        animate();
+    }
+
+    // ============================================================
+    // SETUP
+    // ============================================================
+
+    function setupScene() {
         scene = new THREE.Scene();
+    }
 
-        // Camera
-        camera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 6, 16);
+    function setupCamera() {
+        const cfg = SCENE_CONFIG.camera;
+        camera = new THREE.PerspectiveCamera(
+            cfg.fov,
+            container.clientWidth / container.clientHeight,
+            cfg.near,
+            cfg.far
+        );
+        camera.position.set(...cfg.initialPos);
         camera.lookAt(0, 0, 0);
+    }
 
-        // WebGL Renderer
+    function setupRenderers() {
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -186,7 +238,6 @@
         container.style.position = 'relative';
         container.appendChild(renderer.domElement);
 
-        // CSS2D Label Renderer
         labelRenderer = new THREE.CSS2DRenderer();
         labelRenderer.setSize(container.clientWidth, container.clientHeight);
         labelRenderer.domElement.style.position = 'absolute';
@@ -194,22 +245,26 @@
         labelRenderer.domElement.style.left = '0';
         labelRenderer.domElement.style.pointerEvents = 'none';
         container.appendChild(labelRenderer.domElement);
+    }
 
-        // Controls
+    function setupControls() {
+        const cfg = SCENE_CONFIG.controls;
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.08;
-        controls.minDistance = 4;
-        controls.maxDistance = 35;
+        controls.dampingFactor = cfg.dampingFactor;
+        controls.minDistance = cfg.minDistance;
+        controls.maxDistance = cfg.maxDistance;
         controls.autoRotate = true;
-        controls.autoRotateSpeed = 1.2;
+        controls.autoRotateSpeed = cfg.autoRotateSpeed;
         controls.target.set(0, 0, 0);
+    }
 
-        // Raycaster
+    function setupRaycaster() {
         raycaster = new THREE.Raycaster();
         mouse = new THREE.Vector2();
+    }
 
-        // Lights
+    function setupLights() {
         const ambient = new THREE.AmbientLight(0x404060, 0.6);
         scene.add(ambient);
         const dir = new THREE.DirectionalLight(0xffffff, 1.2);
@@ -218,20 +273,12 @@
         const dir2 = new THREE.DirectionalLight(0x4488ff, 0.4);
         dir2.position.set(-5, -3, -5);
         scene.add(dir2);
+    }
 
-        // Starfield
-        createStarField();
-
-        // Render default mode
-        renderSkillsMode();
-
-        // Events
+    function attachEventListeners() {
         renderer.domElement.addEventListener('click', onCanvasClick);
         renderer.domElement.addEventListener('mousemove', onCanvasMove);
         window.addEventListener('resize', handleResize);
-
-        // Start loop
-        animate();
     }
 
     // ============================================================
@@ -279,7 +326,28 @@
         currentMode = 'skills';
         controls.autoRotate = true;
 
-        // Reset tracking
+        resetSkillsTracking();
+
+        const groups = Object.entries(TECH_NODE_GROUPS);
+        const groupCount = groups.length;
+        const cfg = SCENE_CONFIG.skills;
+
+        groups.forEach(([key, group], groupIndex) => {
+            const angleStart = (groupIndex / groupCount) * Math.PI * 2;
+            const angleEnd = ((groupIndex + 1) / groupCount) * Math.PI * 2;
+            const angleMid = (angleStart + angleEnd) / 2;
+            const nodeCount = group.nodes.length;
+            const nodeRadius = cfg.radius + (nodeCount > 4 ? 0.3 : 0);
+
+            createCategoryLabel(key, group, angleMid, cfg);
+            createGroupNodes(key, group, angleStart, angleEnd, nodeRadius);
+            createIntraGroupLines(key, group);
+        });
+
+        createCoreNode();
+    }
+
+    function resetSkillsTracking() {
         allLabels = [];
         allLines = [];
         allNodeMeshes = [];
@@ -288,76 +356,74 @@
         focusGroup = null;
         coreNode = null;
         coreLabel = null;
+    }
 
-        const groups = Object.entries(TECH_NODE_GROUPS);
-        const gCount = groups.length;
-        const radius = 4.5;
-        const cY = 0;
+    function createCategoryLabel(groupKey, group, angleMid, cfg) {
+        const catRadius = cfg.radius + cfg.categoryRadiusOffset;
+        const catLabel = makeLabel(group.label.pt, group.color, true);
+        catLabel.position.set(
+            Math.cos(angleMid) * catRadius,
+            0.3,
+            Math.sin(angleMid) * catRadius
+        );
+        scene.add(catLabel);
+        categoryLabels.push({ labelObj: catLabel, groupKey: groupKey });
+    }
 
-        groups.forEach(([key, group], gi) => {
-            const aStart = (gi / gCount) * Math.PI * 2;
-            const aEnd = ((gi + 1) / gCount) * Math.PI * 2;
-            const aMid = (aStart + aEnd) / 2;
-            const nCount = group.nodes.length;
-            const nRadius = radius + (nCount > 4 ? 0.3 : 0);
+    function createGroupNodes(groupKey, group, angleStart, angleEnd, nodeRadius) {
+        const nodeCount = group.nodes.length;
+        const centerY = 0;
 
-            // Category label
-            const catR = radius + 1.5;
-            const catLbl = makeLabel(group.label.pt, group.color, true);
-            catLbl.position.set(Math.cos(aMid) * catR, cY + 0.3, Math.sin(aMid) * catR);
-            scene.add(catLbl);
-            categoryLabels.push({ labelObj: catLbl, groupKey: key });
+        group.nodes.forEach((node, nodeIndex) => {
+            const t = nodeCount > 1 ? nodeIndex / (nodeCount - 1) : 0.5;
+            const angle = angleStart + (angleEnd - angleStart) * t;
+            const x = Math.cos(angle) * nodeRadius;
+            const z = Math.sin(angle) * nodeRadius;
+            const yOffset = Math.sin(t * Math.PI) * 0.6;
 
-            // Nodes
-            group.nodes.forEach((node, ni) => {
-                const t = nCount > 1 ? ni / (nCount - 1) : 0.5;
-                const angle = aStart + (aEnd - aStart) * t;
-                const x = Math.cos(angle) * nRadius;
-                const z = Math.sin(angle) * nRadius;
-                const yOff = Math.sin(t * Math.PI) * 0.6;
+            const sphere = makeNode(node.id, node.label, group.color);
+            sphere.position.set(x, centerY + yOffset, z);
+            sphere.userData.groupKey = groupKey;
+            scene.add(sphere);
+            nodeObjects[node.id] = sphere;
+            nodeGroupMap[node.id] = groupKey;
+            allNodeMeshes.push({ mesh: sphere, groupKey: groupKey });
 
-                const sphere = makeNode(node.id, node.label, group.color);
-                sphere.position.set(x, cY + yOff, z);
-                sphere.userData.groupKey = key;
-                scene.add(sphere);
-                nodeObjects[node.id] = sphere;
-                nodeGroupMap[node.id] = key;
-                allNodeMeshes.push({ mesh: sphere, groupKey: key });
-
-                const lbl = makeLabel(node.label, group.color, false);
-                lbl.position.set(x, cY + yOff + 0.8, z);
-                scene.add(lbl);
-                allLabels.push({ labelObj: lbl, groupKey: key });
-            });
+            const label = makeLabel(node.label, group.color, false);
+            const labelYOffset = centerY + yOffset + SCENE_CONFIG.skills.labelYOffset;
+            label.position.set(x, labelYOffset, z);
+            scene.add(label);
+            allLabels.push({ labelObj: label, groupKey: groupKey });
         });
+    }
 
-        // Core
-        const core = makeNode('core', 'Full Stack', 0x007acc);
-        core.scale.set(1.4, 1.4, 1.4);
-        core.position.set(0, cY, 0);
+    function createIntraGroupLines(groupKey, group) {
+        const groupLines = [];
+        for (let i = 0; i < group.nodes.length - 1; i++) {
+            const n1 = nodeObjects[group.nodes[i].id];
+            const n2 = nodeObjects[group.nodes[i + 1].id];
+            if (n1 && n2) {
+                const line = makeLine(n1.position, n2.position, group.color, 0.12);
+                scene.add(line);
+                groupLines.push(line);
+            }
+        }
+        allLines.push({ lines: groupLines, groupKey: groupKey });
+    }
+
+    function createCoreNode() {
+        const cfg = SCENE_CONFIG.skills;
+        const core = makeNode(CORE_NODE_ID, 'Full Stack', 0x007acc);
+        core.scale.set(cfg.coreScale, cfg.coreScale, cfg.coreScale);
+        core.position.set(0, 0, 0);
         scene.add(core);
-        nodeObjects.core = core;
+        nodeObjects[CORE_NODE_ID] = core;
         coreNode = core;
 
-        const coreLbl = makeLabel('Full Stack', 0x007acc, true);
-        coreLbl.position.set(0, cY - 1.2, 0);
-        scene.add(coreLbl);
-        coreLabel = coreLbl;
-
-        // Intra-group connections
-        groups.forEach(([key, group]) => {
-            const gLines = [];
-            for (let i = 0; i < group.nodes.length - 1; i++) {
-                const n1 = nodeObjects[group.nodes[i].id];
-                const n2 = nodeObjects[group.nodes[i + 1].id];
-                if (n1 && n2) {
-                    const line = makeLine(n1.position, n2.position, group.color, 0.12);
-                    scene.add(line);
-                    gLines.push(line);
-                }
-            }
-            allLines.push({ lines: gLines, groupKey: key });
-        });
+        const coreLabelObj = makeLabel('Full Stack', 0x007acc, true);
+        coreLabelObj.position.set(0, cfg.coreYOffset, 0);
+        scene.add(coreLabelObj);
+        coreLabel = coreLabelObj;
     }
 
     // ============================================================
@@ -369,37 +435,29 @@
         currentMode = 'arch';
         controls.autoRotate = false;
 
-        // Group by layer
-        const layers = {};
-        ARCH_NODES.forEach(n => {
-            if (!layers[n.layer]) layers[n.layer] = [];
-            layers[n.layer].push(n);
-        });
+        const layers = groupByLayer(ARCH_NODES);
+        const layerKeys = Object.keys(layers).sort((a, b) => a - b);
+        const cfg = SCENE_CONFIG.arch;
 
-        const lKeys = Object.keys(layers).sort((a, b) => a - b);
-        const lSpacing = 2.0;
+        layerKeys.forEach((layerKey, layerIndex) => {
+            const nodes = layers[layerKey];
+            const y = (layerKeys.length - 1 - layerIndex) * cfg.layerSpacing - 2;
+            const totalWidth = (nodes.length - 1) * cfg.nodeSpacing;
 
-        lKeys.forEach((lk, li) => {
-            const nodes = layers[lk];
-            const y = (lKeys.length - 1 - li) * lSpacing - 2;
-            const spacing = 3.2;
-            const totalW = (nodes.length - 1) * spacing;
-
-            nodes.forEach((node, ni) => {
-                const x = ni * spacing - totalW / 2;
+            nodes.forEach((node, nodeIndex) => {
+                const x = nodeIndex * cfg.nodeSpacing - totalWidth / 2;
 
                 const sphere = makeNode(node.id, node.label, node.color);
                 sphere.position.set(x, y, 0);
                 scene.add(sphere);
                 nodeObjects[node.id] = sphere;
 
-                const lbl = makeLabel(node.label, node.color, false);
-                lbl.position.set(x, y - 0.9, 0);
-                scene.add(lbl);
+                const label = makeLabel(node.label, node.color, false);
+                label.position.set(x, y - 0.9, 0);
+                scene.add(label);
             });
         });
 
-        // Edges
         ARCH_EDGES.forEach(edge => {
             const from = nodeObjects[edge.from];
             const to = nodeObjects[edge.to];
@@ -410,10 +468,18 @@
             }
         });
 
-        // Camera position
-        camera.position.set(-8, 6, 12);
-        controls.target.set(0, 0.5, 0);
+        camera.position.set(...cfg.cameraPos);
+        controls.target.set(...cfg.target);
         controls.update();
+    }
+
+    function groupByLayer(nodes) {
+        const layers = {};
+        nodes.forEach(n => {
+            if (!layers[n.layer]) layers[n.layer] = [];
+            layers[n.layer].push(n);
+        });
+        return layers;
     }
 
     // ============================================================
@@ -425,7 +491,7 @@
         const mat = new THREE.MeshPhongMaterial({
             color: color,
             emissive: color,
-            emissiveIntensity: 0.25,
+            emissiveIntensity: VISIBILITY.DEFAULT_EMISSIVE,
             shininess: 70,
             specular: new THREE.Color(0x333366)
         });
@@ -463,8 +529,8 @@
     }
 
     function makeLine(from, to, color, width) {
-        const pts = [from.clone(), to.clone()];
-        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        const points = [from.clone(), to.clone()];
+        const geo = new THREE.BufferGeometry().setFromPoints(points);
         const mat = new THREE.LineBasicMaterial({
             color: color,
             transparent: true,
@@ -476,19 +542,19 @@
 
     function makeFlowParticles(from, to) {
         const count = 15;
-        const pos = new Float32Array(count * 3);
-        const prog = new Float32Array(count);
+        const positions = new Float32Array(count * 3);
+        const progress = new Float32Array(count);
 
         for (let i = 0; i < count; i++) {
-            prog[i] = i / count;
-            const p = new THREE.Vector3().lerpVectors(from, to, prog[i]);
-            pos[i * 3] = p.x;
-            pos[i * 3 + 1] = p.y;
-            pos[i * 3 + 2] = p.z;
+            progress[i] = i / count;
+            const point = new THREE.Vector3().lerpVectors(from, to, progress[i]);
+            positions[i * 3] = point.x;
+            positions[i * 3 + 1] = point.y;
+            positions[i * 3 + 2] = point.z;
         }
 
         const geo = new THREE.BufferGeometry();
-        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
         const mat = new THREE.PointsMaterial({
             color: 0x63b3ed,
@@ -498,10 +564,15 @@
             blending: THREE.AdditiveBlending
         });
 
-        const pts = new THREE.Points(geo, mat);
-        pts.userData = { from: from, to: to, progress: prog, speed: 0.4 + Math.random() * 0.2 };
-        scene.add(pts);
-        flowParticles.push(pts);
+        const particles = new THREE.Points(geo, mat);
+        particles.userData = {
+            from: from,
+            to: to,
+            progress: progress,
+            speed: 0.4 + Math.random() * 0.2
+        };
+        scene.add(particles);
+        flowParticles.push(particles);
     }
 
     // ============================================================
@@ -511,23 +582,23 @@
     function clearScene() {
         const keep = new Set();
         keep.add(starField);
-        scene.children.forEach(c => {
-            if (c.type === 'AmbientLight' || c.type === 'DirectionalLight' || c.type === 'Scene') {
-                keep.add(c);
+        scene.children.forEach(child => {
+            if (child.type === 'AmbientLight' || child.type === 'DirectionalLight' || child.type === 'Scene') {
+                keep.add(child);
             }
         });
 
         const remove = [];
-        scene.children.forEach(c => {
-            if (!keep.has(c)) remove.push(c);
+        scene.children.forEach(child => {
+            if (!keep.has(child)) remove.push(child);
         });
 
-        remove.forEach(c => {
-            scene.remove(c);
-            if (c.geometry) c.geometry.dispose();
-            if (c.material) {
-                if (Array.isArray(c.material)) c.material.forEach(m => m.dispose());
-                else c.material.dispose();
+        remove.forEach(child => {
+            scene.remove(child);
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+                else child.material.dispose();
             }
         });
 
@@ -553,87 +624,98 @@
     }
 
     // ============================================================
-    // INTERACTION
+    // INTERACTION - Helpers
     // ============================================================
 
-    function onCanvasClick(event) {
+    function getMousePosition(event) {
         const rect = renderer.domElement.getBoundingClientRect();
         mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    }
 
+    function getHitNode(event) {
+        getMousePosition(event);
         raycaster.setFromCamera(mouse, camera);
         const hits = raycaster.intersectObjects(scene.children);
 
-        for (const h of hits) {
-            if (h.object.userData && h.object.userData.type === 'node') {
-                // If clicking on core node, reset focus
-                if (h.object.userData.id === 'core') {
-                    resetFocusSkills();
-                    showNodeInfo(h.object.userData);
-                    return;
-                }
-
-                // In skills mode, focus on the clicked node's group
-                if (currentMode === 'skills') {
-                    const gk = h.object.userData.groupKey;
-                    if (gk) {
-                        if (focusGroup === gk) {
-                            resetFocusSkills();
-                        } else {
-                            focusGroupSkills(gk);
-                        }
-                        showNodeInfo(h.object.userData);
-                        return;
-                    }
-                }
-
-                showNodeInfo(h.object.userData);
-                return;
+        for (const hit of hits) {
+            if (hit.object.userData && hit.object.userData.type === 'node') {
+                return hit.object;
             }
         }
+        return null;
+    }
 
-        // Click on empty space -> reset focus
+    // ============================================================
+    // INTERACTION - Click
+    // ============================================================
+
+    function onCanvasClick(event) {
+        const hitNode = getHitNode(event);
+
+        if (hitNode) {
+            const userData = hitNode.userData;
+
+            if (userData.id === CORE_NODE_ID) {
+                resetFocusSkills();
+                showNodeInfo(userData);
+                return;
+            }
+
+            if (currentMode === 'skills') {
+                const groupKey = userData.groupKey;
+                if (groupKey) {
+                    if (focusGroup === groupKey) {
+                        resetFocusSkills();
+                    } else {
+                        focusGroupSkills(groupKey);
+                    }
+                    showNodeInfo(userData);
+                    return;
+                }
+            }
+
+            showNodeInfo(userData);
+            return;
+        }
+
         if (currentMode === 'skills' && focusGroup !== null) {
             resetFocusSkills();
         }
     }
 
+    // ============================================================
+    // INTERACTION - Hover
+    // ============================================================
+
     function onCanvasMove(event) {
-        const rect = renderer.domElement.getBoundingClientRect();
-        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        const hitNode = getHitNode(event);
 
-        raycaster.setFromCamera(mouse, camera);
-        const hits = raycaster.intersectObjects(scene.children);
-
-        let found = false;
-        for (const h of hits) {
-            if (h.object.userData && h.object.userData.type === 'node') {
-                document.body.style.cursor = 'pointer';
-                if (hoveredObject && hoveredObject !== h.object) resetGlow(hoveredObject);
-                setGlow(h.object);
-                hoveredObject = h.object;
-                found = true;
-                break;
+        if (hitNode) {
+            document.body.style.cursor = 'pointer';
+            if (hoveredObject && hoveredObject !== hitNode) {
+                setGlowIntensity(hoveredObject, VISIBILITY.DEFAULT_EMISSIVE);
+            }
+            setGlowIntensity(hitNode, VISIBILITY.HOVER_EMISSIVE);
+            hoveredObject = hitNode;
+        } else {
+            document.body.style.cursor = 'default';
+            if (hoveredObject) {
+                setGlowIntensity(hoveredObject, VISIBILITY.DEFAULT_EMISSIVE);
+                hoveredObject = null;
             }
         }
-        if (!found) {
-            document.body.style.cursor = 'default';
-            if (hoveredObject) { resetGlow(hoveredObject); hoveredObject = null; }
+    }
+
+    function setGlowIntensity(mesh, intensity) {
+        if (mesh.material && mesh.material.emissiveIntensity !== undefined) {
+            mesh.material.emissiveIntensity = intensity;
         }
     }
 
-    function setGlow(mesh) {
-        if (mesh.material && mesh.material.emissiveIntensity !== undefined) {
-            mesh.material.emissiveIntensity = 0.9;
-        }
-    }
-
-    function resetGlow(mesh) {
-        if (mesh.material && mesh.material.emissiveIntensity !== undefined) {
-            mesh.material.emissiveIntensity = 0.25;
-        }
-    }
+    // ============================================================
+    // NODE INFO TOOLTIP
+    // ============================================================
 
     function showNodeInfo(data) {
         const existing = document.getElementById('tech-radar-tooltip');
@@ -661,88 +743,88 @@
         `;
         div.innerHTML = `
             <div style="font-size:15px;font-weight:600;margin-bottom:2px;">${data.label}</div>
-            <div style="font-size:11px;color:#a0aec0;margin-bottom:2px;">${data.id !== 'core' ? 'Clique para isolar este grupo' : 'Clique para resetar visualização'}</div>
+            <div style="font-size:11px;color:#a0aec0;margin-bottom:2px;">${
+                data.id !== CORE_NODE_ID
+                    ? 'Clique para isolar este grupo'
+                    : 'Clique para resetar visualização'
+            }</div>
         `;
         document.body.appendChild(div);
 
-        const closer = (e) => {
-            if (!div.contains(e.target) && e.target !== renderer.domElement) {
+        const dismissTooltip = (event) => {
+            if (!div.contains(event.target) && event.target !== renderer.domElement) {
                 div.remove();
-                document.removeEventListener('click', closer);
+                document.removeEventListener('click', dismissTooltip);
             }
         };
-        setTimeout(() => document.addEventListener('click', closer), 150);
+        setTimeout(() => document.addEventListener('click', dismissTooltip), 150);
     }
 
     // ============================================================
     // SKILLS FOCUS (Group Highlight)
     // ============================================================
 
+    function setElementOpacity(element, opacity, transition) {
+        element.style.opacity = opacity;
+        element.style.transition = transition || VISIBILITY.ANIMATION_DURATION;
+    }
+
+    function setMeshVisibility(mesh, emissiveIntensity, transparent, opacity) {
+        if (mesh.material) {
+            mesh.material.emissiveIntensity = emissiveIntensity;
+            mesh.material.transparent = transparent;
+            mesh.material.opacity = opacity;
+        }
+    }
+
+    function setLineVisibility(line, opacity, visible) {
+        line.material.opacity = opacity;
+        line.visible = visible;
+    }
+
     function focusGroupSkills(groupKey) {
         focusGroup = groupKey;
 
         // Dim all category labels except the focused one
-        categoryLabels.forEach(({ labelObj, groupKey: gk }) => {
-            const el = labelObj.element;
-            if (gk === groupKey) {
-                el.style.opacity = '1';
-                el.style.transition = 'opacity 0.4s ease';
-            } else {
-                el.style.opacity = '0.15';
-                el.style.transition = 'opacity 0.4s ease';
-            }
+        categoryLabels.forEach(({ labelObj, groupKey: currentKey }) => {
+            const opacity = currentKey === groupKey
+                ? VISIBILITY.FOCUSED_LABEL_OPACITY
+                : VISIBILITY.DIMMED_CATEGORY_OPACITY;
+            setElementOpacity(labelObj.element, opacity);
         });
 
         // Dim all node labels except the focused group
-        allLabels.forEach(({ labelObj, groupKey: gk }) => {
-            const el = labelObj.element;
-            if (gk === groupKey) {
-                el.style.opacity = '1';
-                el.style.transition = 'opacity 0.4s ease';
-            } else {
-                el.style.opacity = '0.12';
-                el.style.transition = 'opacity 0.4s ease';
-            }
+        allLabels.forEach(({ labelObj, groupKey: currentKey }) => {
+            const opacity = currentKey === groupKey
+                ? VISIBILITY.FOCUSED_LABEL_OPACITY
+                : VISIBILITY.DIMMED_LABEL_OPACITY;
+            setElementOpacity(labelObj.element, opacity);
         });
 
         // Dim meshes (nodes) except the focused group
-        allNodeMeshes.forEach(({ mesh, groupKey: gk }) => {
-            if (gk === groupKey) {
-                if (mesh.material) {
-                    mesh.material.emissiveIntensity = 0.5;
-                    mesh.material.opacity = 1;
-                    mesh.material.transparent = false;
-                }
+        allNodeMeshes.forEach(({ mesh, groupKey: currentKey }) => {
+            if (currentKey === groupKey) {
+                setMeshVisibility(mesh, VISIBILITY.FOCUSED_NODE_EMISSIVE, false, 1);
             } else {
-                if (mesh.material) {
-                    mesh.material.emissiveIntensity = 0.05;
-                    mesh.material.transparent = true;
-                    mesh.material.opacity = 0.2;
-                }
+                setMeshVisibility(mesh, VISIBILITY.DIMMED_NODE_EMISSIVE, true, VISIBILITY.DIMMED_OPACITY);
             }
         });
 
-        // Dim core node slightly
-        if (coreNode && coreNode.material) {
-            coreNode.material.transparent = true;
-            coreNode.material.opacity = 0.25;
-            coreNode.material.emissiveIntensity = 0.05;
+        // Dim core node
+        if (coreNode) {
+            setMeshVisibility(coreNode, VISIBILITY.DIMMED_NODE_EMISSIVE, true, VISIBILITY.DIMMED_OPACITY);
         }
-        if (coreLabel && coreLabel.element) {
-            coreLabel.element.style.opacity = '0.12';
-            coreLabel.element.style.transition = 'opacity 0.4s ease';
+        if (coreLabel) {
+            setElementOpacity(coreLabel.element, VISIBILITY.DIMMED_LABEL_OPACITY);
         }
 
         // Show only focused group lines
-        allLines.forEach(({ lines, groupKey: gk }) => {
-            lines.forEach(line => {
-                if (gk === groupKey) {
-                    line.material.opacity = 0.35;
-                    line.visible = true;
-                } else {
-                    line.visible = false;
-                }
-            });
+        allLines.forEach(({ lines, groupKey: currentKey }) => {
+            const opacity = currentKey === groupKey
+                ? VISIBILITY.LINE_OPACITY_VISIBLE
+                : VISIBILITY.LINE_OPACITY_DEFAULT;
+            const visible = currentKey === groupKey;
+            lines.forEach(line => setLineVisibility(line, opacity, visible));
         });
     }
 
@@ -751,44 +833,30 @@
 
         // Restore all category labels
         categoryLabels.forEach(({ labelObj }) => {
-            const el = labelObj.element;
-            el.style.opacity = '1';
-            el.style.transition = 'opacity 0.4s ease';
+            setElementOpacity(labelObj.element, VISIBILITY.FOCUSED_LABEL_OPACITY);
         });
 
         // Restore all node labels
         allLabels.forEach(({ labelObj }) => {
-            const el = labelObj.element;
-            el.style.opacity = '1';
-            el.style.transition = 'opacity 0.4s ease';
+            setElementOpacity(labelObj.element, VISIBILITY.FOCUSED_LABEL_OPACITY);
         });
 
         // Restore all meshes
         allNodeMeshes.forEach(({ mesh }) => {
-            if (mesh.material) {
-                mesh.material.emissiveIntensity = 0.25;
-                mesh.material.transparent = false;
-                mesh.material.opacity = 1;
-            }
+            setMeshVisibility(mesh, VISIBILITY.DEFAULT_EMISSIVE, false, 1);
         });
 
         // Restore core
-        if (coreNode && coreNode.material) {
-            coreNode.material.transparent = false;
-            coreNode.material.opacity = 1;
-            coreNode.material.emissiveIntensity = 0.25;
+        if (coreNode) {
+            setMeshVisibility(coreNode, VISIBILITY.DEFAULT_EMISSIVE, false, 1);
         }
-        if (coreLabel && coreLabel.element) {
-            coreLabel.element.style.opacity = '1';
-            coreLabel.element.style.transition = 'opacity 0.4s ease';
+        if (coreLabel) {
+            setElementOpacity(coreLabel.element, VISIBILITY.FOCUSED_LABEL_OPACITY);
         }
 
         // Restore all lines
         allLines.forEach(({ lines }) => {
-            lines.forEach(line => {
-                line.material.opacity = 0.15;
-                line.visible = true;
-            });
+            lines.forEach(line => setLineVisibility(line, VISIBILITY.LINE_OPACITY_DEFAULT, true));
         });
     }
 
@@ -800,42 +868,50 @@
         animationId = requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
 
-        // Float nodes gently
-        let idx = 0;
-        for (const key in nodeObjects) {
-            const n = nodeObjects[key];
-            if (n && n.position) {
-                const off = n.userData._floatOff;
-                if (off === undefined) n.userData._floatOff = Math.random() * Math.PI * 2;
-                n.position.y += Math.sin(time * 0.4 + n.userData._floatOff + idx * 0.3) * 0.0008;
-            }
-            idx++;
-        }
-
-        // Animate flow particles
-        flowParticles.forEach(fp => {
-            const pos = fp.geometry.attributes.position.array;
-            const { from, to, progress, speed } = fp.userData;
-            const dt = 0.008;
-            for (let i = 0; i < progress.length; i++) {
-                progress[i] = (progress[i] + dt) % 1;
-                const p = new THREE.Vector3().lerpVectors(from, to, progress[i]);
-                pos[i * 3] = p.x;
-                pos[i * 3 + 1] = p.y;
-                pos[i * 3 + 2] = p.z;
-            }
-            fp.geometry.attributes.position.needsUpdate = true;
-        });
-
-        // Rotate starfield
-        if (starField) {
-            starField.rotation.y += 0.0004;
-            starField.rotation.x += 0.0001;
-        }
+        animateNodeFloat(time);
+        animateFlowParticles();
+        animateStarField();
 
         controls.update();
         renderer.render(scene, camera);
         labelRenderer.render(scene, camera);
+    }
+
+    function animateNodeFloat(time) {
+        let index = 0;
+        for (const key in nodeObjects) {
+            const node = nodeObjects[key];
+            if (node && node.position) {
+                if (node.userData._floatOffset === undefined) {
+                    node.userData._floatOffset = Math.random() * Math.PI * 2;
+                }
+                node.position.y += Math.sin(time * 0.4 + node.userData._floatOffset + index * 0.3) * 0.0008;
+            }
+            index++;
+        }
+    }
+
+    function animateFlowParticles() {
+        flowParticles.forEach(particles => {
+            const positions = particles.geometry.attributes.position.array;
+            const { from, to, progress, speed } = particles.userData;
+            const dt = 0.008;
+            for (let i = 0; i < progress.length; i++) {
+                progress[i] = (progress[i] + dt) % 1;
+                const point = new THREE.Vector3().lerpVectors(from, to, progress[i]);
+                positions[i * 3] = point.x;
+                positions[i * 3 + 1] = point.y;
+                positions[i * 3 + 2] = point.z;
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+        });
+    }
+
+    function animateStarField() {
+        if (starField) {
+            starField.rotation.y += 0.0004;
+            starField.rotation.x += 0.0001;
+        }
     }
 
     // ============================================================
@@ -844,13 +920,13 @@
 
     function handleResize() {
         if (!container || !renderer) return;
-        const w = container.clientWidth;
-        const h = container.clientHeight;
-        if (w === 0 || h === 0) return;
-        camera.aspect = w / h;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        if (width === 0 || height === 0) return;
+        camera.aspect = width / height;
         camera.updateProjectionMatrix();
-        renderer.setSize(w, h);
-        labelRenderer.setSize(w, h);
+        renderer.setSize(width, height);
+        labelRenderer.setSize(width, height);
     }
 
     // ============================================================
@@ -892,8 +968,8 @@
 
         document.body.style.cursor = 'default';
 
-        const tip = document.getElementById('tech-radar-tooltip');
-        if (tip) tip.remove();
+        const tooltip = document.getElementById('tech-radar-tooltip');
+        if (tooltip) tooltip.remove();
     }
 
     // ============================================================

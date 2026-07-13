@@ -4,7 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Desenvolvedor Full Stack - Portfólio</title>
+    <title>Marcus S. Costa - Full Stack Developer & Architeture Specialist</title>
+    <meta name="description" content="Portfólio de Marcus S. Costa - Desenvolvedor Full Stack especializado em Java, .NET, React, arquitetura de microsserviços, cloud (AWS/Azure) e DevOps.">
+    <meta name="keywords" content="full stack developer, java, .net, react, arquitetura microsserviços, cloud, aws, azure, devops, kubernetes, docker, portfólio">
+    <meta name="author" content="Marcus S. Costa">
+    <meta property="og:title" content="Marcus S. Costa - Full Stack Developer">
+    <meta property="og:description" content="Especialista em desenvolvimento de aplicações, arquitetura de sistemas e tecnologias de nuvem.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://marcusscos.github.io/static-portfolio-minimal">
+    <meta property="og:locale" content="pt_BR">
     <link rel="stylesheet" href="./styles.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
@@ -43,6 +51,7 @@
                 <li><a href="#about" id="nav-about">Sobre</a></li>
                 <li><a href="#skills" id="nav-skills">Habilidades</a></li>
                 <li><a href="#experience" id="nav-experience">Experiência</a></li>
+                <li><a href="#projects" id="nav-projects">Projetos</a></li>
                 <li><a href="#architecture" id="nav-architecture">Arquitetura</a></li>
                 <li><a href="#contact" id="nav-contact">Contato</a></li>
                 <li>
@@ -122,11 +131,11 @@
         <section id="architecture">
             <h2>Arquitetura de Microsserviços Corporativa</h2>
             <div class="view-toggle">
-                <button id="btn-skills" class="active" onclick="switch3DMode('skills')">
-                    <i data-lucide="cpu"></i> Tech Radar
+                <button id="btn-skills" class="active" onclick="switch3DMode('skills')" aria-label="Exibir Tech Radar 3D com habilidades" aria-pressed="true">
+                    <i data-lucide="cpu" aria-hidden="true"></i> Tech Radar
                 </button>
-                <button id="btn-arch" onclick="switch3DMode('arch')">
-                    <i data-lucide="network"></i> Architecture
+                <button id="btn-arch" onclick="switch3DMode('arch')" aria-label="Exibir diagrama de arquitetura" aria-pressed="false">
+                    <i data-lucide="network" aria-hidden="true"></i> Architecture
                 </button>
             </div>
             <div id="mermaid-container"></div>
@@ -158,130 +167,136 @@
     </footer>
 
     <script>
-        const diagramDefs = {
-            pt: `graph LR
-                LB["NGINX / HAProxy"]
-                GW["Kong / Spring Gateway"]
-                IAM["Keycloak / Azure AD"]
-                ERP["Java / .NET"]
-                CRM["Node.js / Python"]
-                BI["Power BI / Python"]
-                DB[("Oracle / SQL Server")]
-                RC[("Redis")]
-                DW[("Snowflake / Hadoop")]
-                MQ["Kafka / RabbitMQ"]
-                WK[".NET / Java"]
-                MN["Prometheus / Grafana"]
+        const DIAGRAM_DEF = `graph LR
+            LB["NGINX / HAProxy"]
+            GW["Kong / Spring Gateway"]
+            IAM["Keycloak / Azure AD"]
+            ERP["Java / .NET"]
+            CRM["Node.js / Python"]
+            BI["Power BI / Python"]
+            DB[("Oracle / SQL Server")]
+            RC[("Redis")]
+            DW[("Snowflake / Hadoop")]
+            MQ["Kafka / RabbitMQ"]
+            WK[".NET / Java"]
+            MN["Prometheus / Grafana"]
 
-                LB --> GW
-                GW --> IAM
-                GW --> ERP
-                GW --> CRM
-                GW --> BI
-                ERP --> DB
-                CRM --> RC
-                BI --> DW
-                ERP --> MQ
-                CRM --> MQ
-                MQ --> WK
-                GW --> MN`,
-            en: `graph LR
-                LB["NGINX / HAProxy"]
-                GW["Kong / Spring Gateway"]
-                IAM["Keycloak / Azure AD"]
-                ERP["Java / .NET"]
-                CRM["Node.js / Python"]
-                BI["Power BI / Python"]
-                DB[("Oracle / SQL Server")]
-                RC[("Redis")]
-                DW[("Snowflake / Hadoop")]
-                MQ["Kafka / RabbitMQ"]
-                WK[".NET / Java"]
-                MN["Prometheus / Grafana"]
+            LB --> GW
+            GW --> IAM
+            GW --> ERP
+            GW --> CRM
+            GW --> BI
+            ERP --> DB
+            CRM --> RC
+            BI --> DW
+            ERP --> MQ
+            CRM --> MQ
+            MQ --> WK
+            GW --> MN`;
 
-                LB --> GW
-                GW --> IAM
-                GW --> ERP
-                GW --> CRM
-                GW --> BI
-                ERP --> DB
-                CRM --> RC
-                BI --> DW
-                ERP --> MQ
-                CRM --> MQ
-                MQ --> WK
-                GW --> MN`
-        };
+        const FORMPREE_ENDPOINT = 'https://formspree.io/f/SEU_ID_AQUI'; // Substitua pelo seu endpoint do Formspree
 
         const content = {
             pt: {
                 heroTitle: "Desenvolvedor Full Stack",
-                heroDesc: "Especialista em desenvolvimento de aplicações, arquitetura de sistemas e tecnologias de nuvem.",
+                heroDesc: "Mais de 5 anos contribuindo para o desenvolvimento de soluções web escaláveis. Foco em design e implementação de serviços RESTful com Java Spring e bancos de dados relacionais, além de TypeScript no front-end com Jest para criar soluções visuais que melhoram a jornada do cliente.",
                 ctaText: "Explore minhas habilidades",
                 skillsTitle: "Habilidades",
                 skills: [
-                    { icon: "code", title: '<a href="desenvolvimento-aplicacoes.html">Desenvolvimento de Aplicações</a>', desc: "Experiência em várias linguagens e frameworks" },
-                    { icon: "database", title: "Gerenciamento de Bancos de Dados", desc: "Proficiente em SQL e NoSQL" },
-                    { icon: "cloud", title: "Tecnologias de Nuvem", desc: "AWS, Azure, Google Cloud" },
-                    { icon: "terminal", title: "DevOps", desc: "CI/CD, Docker, Kubernetes" },
-                    { icon: "cpu", title: "Machine Learning", desc: "Conhecimentos básicos em ML e IA" },
-                    { icon: "shield", title: "Segurança", desc: "Práticas de segurança em aplicações e infraestrutura" }
+                    { icon: "code", title: "Java / Spring Boot", desc: "Design e implementação de serviços RESTful escaláveis e seguros" },
+                    { icon: "database", title: "Bancos Relacionais", desc: "Modelagem e otimização de SQL Server, Oracle e bancos relacionais" },
+                    { icon: "layout", title: "TypeScript / React / Angular", desc: "Soluções front-end com Jest para qualidade e melhor experiência do usuário" },
+                    { icon: "terminal", title: "Node.js / JavaScript", desc: "APIs e microsserviços com Node.js, Mockito para testes" },
+                    { icon: "cloud", title: "Cloud & Arquitetura", desc: "AWS, Azure, GCP — arquiteturas escaláveis com open source" },
+                    { icon: "cpu", title: "CI/CD & DevOps", desc: "Deploy mais rápido, eficiente e seguro com pipelines automatizados" }
                 ],
                 expTitle: "Experiência",
-                expDesc: "Experiência em criar arquiteturas e ambientes utilizando tecnologias open source, tanto em ambientes físicos quanto em máquinas virtuais na nuvem. Especializado em lidar com escalabilidade e segurança, desde micro serviços até grandes monólitos.",
-                expItems: [
-                    "Desenvolvimento de aplicações de larga escala",
-                    "Implementação de arquiteturas de microserviços",
-                    "Otimização de performance e escalabilidade",
-                    "Integração de sistemas e APIs",
-                    "Implementação de práticas de DevOps e CI/CD"
+                expTimeline: [
+                    { period: "2019 - Atual", role: "Desenvolvedor Full Stack Sênior", company: "NTT DATA Europe & Latin America", items: ["Desenvolvimento de soluções web escaláveis com Java Spring e TypeScript", "Design e implementação de serviços RESTful com foco em segurança e eficiência", "Modelagem e otimização de bancos de dados relacionais (SQL Server, Oracle)", "Criação de arquiteturas em cloud com AWS, Azure e GCP utilizando tecnologias open source", "Implementação de pipelines CI/CD para deploys mais rápidos e seguros"] },
+                ],
+                projectsTitle: "Projetos",
+                projects: [
+                    { icon: "github", title: "Tech Radar 3D", tech: "Three.js / JavaScript / CSS3D", desc: "Visualização 3D interativa de skills e arquitetura de microsserviços para portfólio.", link: "https://github.com/marcusscos/static-portfolio-minimal" },
                 ],
                 archTitle: "Arquitetura de Microsserviços Corporativa",
                 contactTitle: "Contato",
-                contactDesc: "Como entrar em contato comigo...",
+                contactDesc: "Entre em contato para oportunidades, parcerias ou trocar uma ideia sobre tecnologia.",
+                formName: "Nome",
+                formEmail: "E-mail",
+                formMessage: "Mensagem",
+                formSend: "Enviar Mensagem",
+                formSending: "Enviando...",
+                formSuccess: "Mensagem enviada com sucesso! Obrigado pelo contato.",
+                formError: "Erro ao enviar mensagem. Tente novamente.",
                 footer: "&copy; 2019&ndash;2026 Marcus S. Costa. Nenhuma licença (todos os direitos reservados).",
-                nav: ["Sobre", "Habilidades", "Experiência", "Arquitetura", "Contato"]
+                nav: ["Sobre", "Habilidades", "Experiência", "Projetos", "Arquitetura", "Contato"]
             },
             en: {
                 heroTitle: "Full Stack Developer",
-                heroDesc: "Specialist in application development, system architecture and cloud technologies.",
+                heroDesc: "Over 5 years contributing to scalable web solutions at NTT DATA Europe & Latin America. Focused on designing and implementing RESTful services with Java Spring and relational databases, paired with TypeScript on the front-end with Jest to deliver user-friendly visual solutions.",
                 ctaText: "Explore my skills",
                 skillsTitle: "Skills",
                 skills: [
-                    { icon: "code", title: '<a href="desenvolvimento-aplicacoes.html">Application Development</a>', desc: "Experience in multiple languages and frameworks" },
-                    { icon: "database", title: "Database Management", desc: "Proficient in SQL and NoSQL" },
-                    { icon: "cloud", title: "Cloud Technologies", desc: "AWS, Azure, Google Cloud" },
-                    { icon: "terminal", title: "DevOps", desc: "CI/CD, Docker, Kubernetes" },
-                    { icon: "cpu", title: "Machine Learning", desc: "Basic knowledge in ML and AI" },
-                    { icon: "shield", title: "Security", desc: "Security practices in applications and infrastructure" }
+                    { icon: "code", title: "Java / Spring Boot", desc: "Design and implementation of secure, scalable RESTful services" },
+                    { icon: "database", title: "Relational Databases", desc: "SQL Server, Oracle — modeling and performance optimization" },
+                    { icon: "layout", title: "TypeScript / React / Angular", desc: "Front-end solutions with Jest for quality and better UX" },
+                    { icon: "terminal", title: "Node.js / JavaScript", desc: "APIs and microservices with Node.js, Mockito for testing" },
+                    { icon: "cloud", title: "Cloud & Architecture", desc: "AWS, Azure, GCP — scalable architectures with open source" },
+                    { icon: "cpu", title: "CI/CD & DevOps", desc: "Faster, more efficient and secure deployments with automated pipelines" }
                 ],
                 expTitle: "Experience",
-                expDesc: "Experience in creating architectures and environments using open source technologies, both in physical environments and cloud virtual machines. Specialized in dealing with scalability and security, from microservices to large monoliths.",
-                expItems: [
-                    "Large-scale application development",
-                    "Microservices architecture implementation",
-                    "Performance and scalability optimization",
-                    "System and API integration",
-                    "DevOps and CI/CD practices implementation"
+                expTimeline: [
+                    { period: "2019 - Present", role: "Senior Full Stack Developer", company: "NTT DATA Europe & Latin America", items: ["Scalable web solutions development with Java Spring and TypeScript", "RESTful services design with focus on security and efficiency", "Relational database modeling and optimization (SQL Server, Oracle)", "Cloud architectures with AWS, Azure and GCP using open source technologies", "CI/CD pipeline implementation for faster and safer deployments"] },
+                ],
+                projectsTitle: "Projects",
+                projects: [
+                    { icon: "github", title: "Tech Radar 3D", tech: "Three.js / JavaScript / CSS3D", desc: "Interactive 3D visualization of skills and microservices architecture for portfolio.", link: "https://github.com/marcusscos/static-portfolio-minimal" }
                 ],
                 archTitle: "Corporate Microservices Architecture",
                 contactTitle: "Contact",
-                contactDesc: "How to get in touch with me...",
+                contactDesc: "Get in touch for opportunities, partnerships, or to talk about technology.",
+                formName: "Name",
+                formEmail: "Email",
+                formMessage: "Message",
+                formSend: "Send Message",
+                formSending: "Sending...",
+                formSuccess: "Message sent successfully! Thank you for getting in touch.",
+                formError: "Error sending message. Please try again.",
                 footer: "&copy; 2019&ndash;2026 Marcus S. Costa. No license (all rights reserved).",
-                nav: ["About", "Skills", "Experience", "Architecture", "Contact"]
+                nav: ["About", "Skills", "Experience", "Projects", "Architecture", "Contact"]
             }
         };
 
         let svgCache = {};
-        const navIds = ["nav-about", "nav-skills", "nav-experience", "nav-architecture", "nav-contact"];
-        const sectionIds = ["about", "skills", "experience", "architecture", "contact"];
+        const navIds = ["nav-about", "nav-skills", "nav-experience", "nav-projects", "nav-architecture", "nav-contact"];
+        const sectionIds = ["about", "skills", "experience", "projects", "architecture", "contact"];
 
         function buildPageHTML(lang) {
             const c = content[lang];
             const skillCards = c.skills.map(s =>
                 `<div class="skill-card"><i data-lucide="${s.icon}"></i><h3>${s.title}</h3><p>${s.desc}</p></div>`
             ).join('');
-            const expItems = c.expItems.map(item => `<li>${item}</li>`).join('');
+
+            const expTimeline = c.expTimeline.map(entry => `
+                <div class="timeline-item">
+                    <div class="timeline-period">${entry.period}</div>
+                    <div class="timeline-content">
+                        <h3>${entry.role}</h3>
+                        <p class="timeline-company">${entry.company}</p>
+                        <ul>${entry.items.map(item => `<li>${item}</li>`).join('')}</ul>
+                    </div>
+                </div>
+            `).join('');
+
+            const projectCards = c.projects.map(p => `
+                <a href="${p.link}" target="_blank" rel="noopener noreferrer" class="project-card">
+                    <div class="project-icon"><i class="fab fa-${p.icon}"></i></div>
+                    <h3>${p.title}</h3>
+                    <p class="project-tech">${p.tech}</p>
+                    <p>${p.desc}</p>
+                </a>
+            `).join('');
+
             return `<section id="about">
                 <h1>${c.heroTitle}</h1>
                 <p>${c.heroDesc}</p>
@@ -296,10 +311,11 @@
             </section>
             <section id="experience">
                 <h2>${c.expTitle}</h2>
-                <div class="experience-content">
-                    <p>${c.expDesc}</p>
-                    <ul>${expItems}</ul>
-                </div>
+                <div class="experience-timeline">${expTimeline}</div>
+            </section>
+            <section id="projects">
+                <h2>${c.projectsTitle}</h2>
+                <div class="projects-grid">${projectCards}</div>
             </section>
             <section id="architecture">
                 <h2>${c.archTitle}</h2>
@@ -323,6 +339,22 @@
                             <a href="https://www.linkedin.com/in/marcus-segalotto-costa-986060156/" target="_blank" rel="noopener noreferrer"><i class="fab fa-linkedin fa-2x"></i></a>
                         </div>
                     </div>
+                    <form id="contact-form" class="contact-form">
+                        <div class="form-group">
+                            <label for="form-name">${c.formName}</label>
+                            <input type="text" id="form-name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-email">${c.formEmail}</label>
+                            <input type="email" id="form-email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-message">${c.formMessage}</label>
+                            <textarea id="form-message" name="message" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" id="form-submit">${c.formSend}</button>
+                        <p id="form-status" class="form-status" style="display:none;"></p>
+                    </form>
                 </div>
             </section>`;
         }
@@ -340,7 +372,7 @@
 
             // Update nav links
             document.querySelectorAll('nav ul li a').forEach((a, i) => {
-                const hrefs = ['#about', '#skills', '#experience', '#architecture', '#contact'];
+                const hrefs = ['#about', '#skills', '#experience', '#projects', '#architecture', '#contact'];
                 if (i < content[lang].nav.length) {
                     a.textContent = content[lang].nav[i];
                     a.href = hrefs[i];
@@ -359,32 +391,104 @@
         }
 
         function initArchitectureSection(lang) {
-            const c = document.getElementById('mermaid-container');
-            if (!c) return;
+            const container = document.getElementById('mermaid-container');
+            if (!container) return;
 
             // Show loading
-            c.innerHTML = '<p style="color:#a0aec0;text-align:center;">Inicializando...</p>';
+            container.innerHTML = '<p style="color:#a0aec0;text-align:center;">Inicializando...</p>';
 
-            // Try to initialize Tech Radar 3D, fallback to Mermaid
-            // We use a small delay to allow Three.js scripts to settle
-            setTimeout(async () => {
-                try {
-                    if (typeof THREE !== 'undefined' && typeof window.initTechRadar === 'function') {
-                        window.initTechRadar();
-                    } else {
-                        throw new Error('Three.js not available');
-                    }
-                } catch (e) {
-                    console.warn('[Portfolio] 3D not available, using Mermaid fallback:', e.message);
+            const start3D = () => {
+                // Try to initialize Tech Radar 3D, fallback to Mermaid
+                setTimeout(async () => {
                     try {
-                        const s = await renderMermaidSVG(diagramDefs[lang]);
-                        svgCache[lang] = s;
-                        c.innerHTML = s;
-                    } catch (mermaidErr) {
-                        c.innerHTML = '<p style="color:#a0aec0;text-align:center;">Erro ao carregar diagrama.</p>';
+                        if (typeof THREE !== 'undefined' && typeof window.initTechRadar === 'function') {
+                            window.initTechRadar();
+                        } else {
+                            throw new Error('Three.js not available');
+                        }
+                    } catch (e) {
+                        console.warn('[Portfolio] 3D not available, using Mermaid fallback:', e.message);
+                        try {
+                            const s = await renderMermaidSVG(DIAGRAM_DEF);
+                            container.innerHTML = s;
+                        } catch (mermaidErr) {
+                            container.innerHTML = '<p style="color:#a0aec0;text-align:center;">Erro ao carregar diagrama.</p>';
+                        }
                     }
+                }, 100);
+            };
+
+            // Use IntersectionObserver to lazy-load only when visible
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            start3D();
+                            observer.disconnect();
+                        }
+                    });
+                }, { rootMargin: '200px' });
+                observer.observe(container);
+                // Store observer reference for cleanup on language switch
+                container._observer = observer;
+            } else {
+                start3D();
+            }
+        }
+
+        function updateAriaPressed(activeId) {
+            const skillsBtn = document.getElementById('btn-skills');
+            const archBtn = document.getElementById('btn-arch');
+            if (skillsBtn) skillsBtn.setAttribute('aria-pressed', activeId === 'btn-skills' ? 'true' : 'false');
+            if (archBtn) archBtn.setAttribute('aria-pressed', activeId === 'btn-arch' ? 'true' : 'false');
+        }
+
+        // Update switch3DMode to also toggle aria-pressed
+        const originalSwitch3D = window.switch3DMode;
+        window.switch3DMode = function(mode) {
+            if (originalSwitch3D) originalSwitch3D(mode);
+            updateAriaPressed(mode === 'skills' ? 'btn-skills' : 'btn-arch');
+        };
+
+        // Contact form handler with Formspree
+        function initContactForm(lang) {
+            const form = document.getElementById('contact-form');
+            if (!form) return;
+            
+            const c = content[lang];
+            const submitBtn = document.getElementById('form-submit');
+            const statusEl = document.getElementById('form-status');
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                statusEl.style.display = 'none';
+                submitBtn.textContent = c.formSending;
+                submitBtn.disabled = true;
+                
+                try {
+                    const resp = await fetch(FORMPREE_ENDPOINT, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (resp.ok) {
+                        statusEl.textContent = c.formSuccess;
+                        statusEl.className = 'form-status form-success';
+                        form.reset();
+                    } else {
+                        throw new Error('HTTP ' + resp.status);
+                    }
+                } catch (err) {
+                    statusEl.textContent = c.formError;
+                    statusEl.className = 'form-status form-error';
                 }
-            }, 100);
+                
+                statusEl.style.display = 'block';
+                submitBtn.textContent = c.formSend;
+                submitBtn.disabled = false;
+                
+                setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
+            });
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -395,8 +499,10 @@
 
             // Init architecture section with 3D (or Mermaid fallback)
             initArchitectureSection(l);
+            initContactForm(l);
 
             document.getElementById('footer-text').innerHTML = content[l].footer;
+            updateAriaPressed('btn-skills');
         });
     </script>
 </body>
