@@ -354,39 +354,145 @@ footer p {
 /* Responsive Styles */
 @media (max-width: 768px) {
     header {
-        padding: 0.7rem;
-        height: 5%;
+        padding: 0.4rem;
     }
 
     nav ul {
-        padding: 0.7rem;
+        padding: 0.4rem;
+        gap: 4px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    nav ul li {
+        margin: 0 0.3rem;
+        flex-shrink: 0;
     }
 
     nav ul li a {
-        font-size: 0.6125rem;
+        font-size: 0.6rem;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+
+    .lang-toggle button {
+        padding: 3px 8px;
+        font-size: 0.7rem;
+    }
+
+    main {
+        width: 95%;
+        padding: 12px;
+        height: 100vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    section {
+        min-height: auto;
+        padding: 1.5rem 0;
     }
 
     h1 {
-        font-size: 2.5rem;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
     }
 
     h2 {
-        font-size: 2rem;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    p {
+        font-size: 0.95rem;
+        margin-bottom: 1rem;
     }
 
     .skills-grid {
         grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+
+    .skill-card {
+        padding: 1rem;
+    }
+
+    .skill-card i {
+        font-size: 1.5rem;
+    }
+
+    .skill-card h3 {
+        font-size: 1rem;
+    }
+
+    .skill-card p {
+        font-size: 0.8rem;
+    }
+
+    .view-toggle {
+        max-width: 100%;
+        padding: 4px;
+        gap: 4px;
+        margin-top: 0.8rem;
+    }
+
+    .view-toggle button {
+        padding: 8px 12px;
+        font-size: 0.75rem;
+        flex: 1;
+        justify-content: center;
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .view-toggle button i {
+        font-size: 0.85rem;
+    }
+
+    #mermaid-container {
+        min-height: 350px;
+        padding: 12px;
+        margin-top: 0.8rem;
     }
 
     .mermaid {
-        font-size: 3rem;
+        font-size: 2rem;
+    }
+
+    .experience-content {
+        padding: 1rem;
+    }
+
+    .contact-info {
+        padding: 1rem;
     }
 
     footer {
-        padding: 1rem 0;
+        padding: 0.8rem 0;
     }
 
     footer p {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.6rem;
+    }
+
+    h2 {
+        font-size: 1.3rem;
+    }
+
+    #mermaid-container {
+        min-height: 280px;
+        padding: 8px;
+    }
+
+    .view-toggle button {
+        font-size: 0.7rem;
+        padding: 6px 10px;
     }
 }

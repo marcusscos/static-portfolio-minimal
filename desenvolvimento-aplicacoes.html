@@ -45,6 +45,14 @@
         #mermaid-container svg .node polygon { fill: #2d3748 !important; stroke: #63b3ed !important; stroke-width: 2px !important; }
         #mermaid-container svg .edgePath path { stroke: #63b3ed !important; stroke-width: 2px !important; fill: none !important; }
         #mermaid-container svg .marker { fill: #63b3ed !important; stroke: #63b3ed !important; }
+        @media (max-width: 768px) {
+            nav ul { flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding: 0.5rem; }
+            nav ul li a { font-size: 0.7rem; white-space: nowrap; }
+            .lang-toggle button { padding: 3px 8px; font-size: 0.7rem; }
+            #mermaid-container { min-height: 350px; padding: 12px; }
+            .tech-box { padding: 12px; }
+            .tech-box li { font-size: 0.85rem; }
+        }
     </style>
 </head>
 <body>

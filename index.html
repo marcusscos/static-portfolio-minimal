@@ -29,6 +29,10 @@
         #mermaid-container svg .node polygon { fill: #2d3748 !important; stroke: #63b3ed !important; stroke-width: 2px !important; }
         #mermaid-container svg .edgePath path { stroke: #63b3ed !important; stroke-width: 2px !important; fill: none !important; }
         #mermaid-container svg .marker { fill: #63b3ed !important; stroke: #63b3ed !important; }
+        @media (max-width: 768px) {
+            #mermaid-container { min-height: 350px; padding: 12px; margin-top: 0.8rem; }
+            .view-toggle { max-width: 100%; }
+        }
     </style>
 </head>
 
