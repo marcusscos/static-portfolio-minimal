@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1055/1055687.png" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
+    <script src="./js/tech-radar.js"></script>
     <script>
         mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: { background: '#1a202c', primaryColor: '#2d3748', primaryTextColor: '#ffffff', primaryBorderColor: '#63b3ed', lineColor: '#63b3ed', nodeBorder: '#63b3ed', nodeTextColor: '#ffffff' }, flowchart: { htmlLabels: false, padding: 20, nodeSpacing: 60, rankSpacing: 80 } });
     </script>
@@ -113,6 +117,14 @@
 
         <section id="architecture">
             <h2>Arquitetura de Microsserviços Corporativa</h2>
+            <div class="view-toggle">
+                <button id="btn-skills" class="active" onclick="switch3DMode('skills')">
+                    <i data-lucide="cpu"></i> Tech Radar
+                </button>
+                <button id="btn-arch" onclick="switch3DMode('arch')">
+                    <i data-lucide="network"></i> Architecture
+                </button>
+            </div>
             <div id="mermaid-container"></div>
         </section>
 
@@ -287,6 +299,14 @@
             </section>
             <section id="architecture">
                 <h2>${c.archTitle}</h2>
+                <div class="view-toggle">
+                    <button id="btn-skills" class="active" onclick="if(window.switch3DMode)window.switch3DMode('skills')">
+                        <i data-lucide="cpu"></i> Tech Radar
+                    </button>
+                    <button id="btn-arch" onclick="if(window.switch3DMode)window.switch3DMode('arch')">
+                        <i data-lucide="network"></i> Architecture
+                    </button>
+                </div>
                 <div id="mermaid-container"></div>
             </section>
             <section id="contact">
@@ -327,26 +347,40 @@
             document.getElementById('main-content').innerHTML = buildPageHTML(lang);
             if (window.lucide) lucide.createIcons();
 
-            // Render mermaid
+            // Init architecture section with 3D (or Mermaid fallback)
+            initArchitectureSection(lang);
+
+            document.getElementById('footer-text').innerHTML = content[lang].footer;
+            localStorage.setItem('preferred-lang', lang);
+        }
+
+        function initArchitectureSection(lang) {
             const c = document.getElementById('mermaid-container');
-            if (c) {
-                if (svgCache[lang]) {
-                    c.innerHTML = svgCache[lang];
-                } else {
-                    c.innerHTML = '<p style="color:#a0aec0;text-align:center;">Carregando...</p>';
+            if (!c) return;
+
+            // Show loading
+            c.innerHTML = '<p style="color:#a0aec0;text-align:center;">Inicializando...</p>';
+
+            // Try to initialize Tech Radar 3D, fallback to Mermaid
+            // We use a small delay to allow Three.js scripts to settle
+            setTimeout(async () => {
+                try {
+                    if (typeof THREE !== 'undefined' && typeof window.initTechRadar === 'function') {
+                        window.initTechRadar();
+                    } else {
+                        throw new Error('Three.js not available');
+                    }
+                } catch (e) {
+                    console.warn('[Portfolio] 3D not available, using Mermaid fallback:', e.message);
                     try {
                         const s = await renderMermaidSVG(diagramDefs[lang]);
                         svgCache[lang] = s;
                         c.innerHTML = s;
-                    } catch (e) {
+                    } catch (mermaidErr) {
                         c.innerHTML = '<p style="color:#a0aec0;text-align:center;">Erro ao carregar diagrama.</p>';
-                        console.error(e);
                     }
                 }
-            }
-
-            document.getElementById('footer-text').innerHTML = content[lang].footer;
-            localStorage.setItem('preferred-lang', lang);
+            }, 100);
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -354,18 +388,10 @@
             document.getElementById('lang-pt').classList.add('active');
             document.getElementById('main-content').innerHTML = buildPageHTML(l);
             if (window.lucide) lucide.createIcons();
-            const c = document.getElementById('mermaid-container');
-            if (c) {
-                c.innerHTML = '<p style="color:#a0aec0;text-align:center;">Carregando...</p>';
-                try {
-                    const s = await renderMermaidSVG(diagramDefs[l]);
-                    svgCache[l] = s;
-                    c.innerHTML = s;
-                } catch (e) {
-                    c.innerHTML = '<p style="color:#a0aec0;text-align:center;">Erro ao carregar diagrama.</p>';
-                    console.error(e);
-                }
-            }
+
+            // Init architecture section with 3D (or Mermaid fallback)
+            initArchitectureSection(l);
+
             document.getElementById('footer-text').innerHTML = content[l].footer;
         });
     </script>
